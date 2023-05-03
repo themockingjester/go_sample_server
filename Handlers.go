@@ -26,10 +26,34 @@ type PostBodyParamsStructure struct {
 	ClassName int `json:"class"`
 }
 
+type UserDataBodyParams struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+func AddUser(res http.ResponseWriter, req *http.Request) {
+	bodyParams := UserDataBodyParams{}
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&bodyParams); err != nil {
+		fmt.Printf("error parsing request JSON: %v", err)
+		res.Header().Set("Content-Type", "application/json")
+
+		result := responseForm{Success: true, Message: "error parsing request JSON", Code: 200, Data: struct{}{}}
+		responseJson, _ := json.Marshal(result)
+		res.Write(responseJson)
+		return
+	}
+	fmt.Println(bodyParams)
+	insertionRes := bodyParams.AddUserInDB()
+	result := responseForm{Success: insertionRes.Success, Message: insertionRes.Message, Code: insertionRes.Code, Data: insertionRes.Data}
+	res.Header().Set("Content-Type", "application/json")
+	responseJson, _ := json.Marshal(result)
+	res.Write(responseJson)
+	return
+}
 func PostRequest(res http.ResponseWriter, req *http.Request) {
 	id := req.URL.Query().Get("id")
 	source := chi.URLParam(req, "source")
-
 	//Extracting body parameters from request
 	bodyParams := PostBodyParamsStructure{}
 	decoder := json.NewDecoder(req.Body)
